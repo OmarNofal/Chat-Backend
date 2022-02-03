@@ -1,18 +1,19 @@
 import datetime
+from model import model
 
-class user:
+class user(model.model):
     """ represents a user of the application """
     def __init__(self, 
     id: str = None,
     first_name: str = '',
     last_name: str = '',
-    birth_date: datetime.date = datetime.date(2001, 7, 23),
+    birth_date: datetime.date = datetime.datetime(2001, 7, 23),
     phone_number: str = '+201010000001',
     country: str = 'Egypt',
     status: str = 'Available',
     pp_id: str = None # profile picture id
     ):
-        self.id = id
+        super().__init__(id)
         self.first_name = first_name
         self.last_name = last_name
         self.birth_date = birth_date
