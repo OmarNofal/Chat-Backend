@@ -9,6 +9,7 @@ class user(model.model):
     last_name: str = '',
     birth_date: datetime.date = datetime.datetime(2001, 7, 23),
     phone_number: str = '+201010000001',
+    password: str = '123456',
     country: str = 'Egypt',
     status: str = 'Available',
     pp_id: str = None # profile picture id
