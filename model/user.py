@@ -22,6 +22,7 @@ class user(model.model):
         self.country = country
         self.status = status
         self.pp_id = pp_id
+        self.password = password
     
     def as_dict(self):
         return {
@@ -30,6 +31,7 @@ class user(model.model):
             'last_name': self.last_name,
             'birth_date': self.birth_date,
             'phone_number': self.phone_number,
+            'password': self.password,
             'country': self.country,
             'status': self.status,
             'pp_id': self.pp_id
