@@ -16,7 +16,7 @@ class message_store:
         return {'result': 'error', 'message': 'Error occured while sending message'}
 
     def delete_message(self, msg_id: str):
-        return self.dao.delete_one({'_id': ObjecetId(msg_id)})
+        return self.dao.delete_one({'_id': ObjectId(msg_id)})
 
     def get_messages_to(self, user_id: str):
         """
