@@ -5,7 +5,6 @@ from model import model
 class dao:
 
     def __init__(self, db: pymongo.database.Database, collection_name):
-        print(db)
         self.collection = db.get_collection(collection_name)
 
     def insert(self, x: model.model):
