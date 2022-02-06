@@ -64,7 +64,7 @@ class authenticator:
     def get_instance():
         if authenticator.instance == None:
             database = db.database.app_database.get_instance()
-            authenticator.instance = authenticator(database)
+            authenticator.instance = authenticator(database.db)
         return authenticator.instance
 
     def _insert_session(self, user_id, token):
