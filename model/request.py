@@ -1,4 +1,4 @@
-from model import model
+from .model import model
 from datetime import datetime
 
 class request(model):
@@ -14,7 +14,7 @@ class request(model):
         self.receiver_id = receiver_id
         self.time = time
     
-    def as_dict() -> dict:
+    def as_dict(self) -> dict:
         return {
             'id': self.id,
             'sender_id': self.sender_id,
