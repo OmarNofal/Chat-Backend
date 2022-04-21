@@ -8,12 +8,19 @@ class message(model):
     from_id: str = None,
     to_id: str = None,
     time: datetime = datetime.now(),
+    media_id: str = None,
     message_text: str = ''
     ):
         super().__init__(id)
         self.message_text = message_text
         self.from_id = from_id
         self.to_id = to_id
-        self.type = 'text_message'
+        self.media_id = media_id
 
-
+    def as_dict(self) -> dict:
+        res = super().as_dict()
+        res['from_id'] = self.from_id
+        res['to_id'] = self.to_id
+        res['media_id'] = self.media_id
+        res['message_text'] = self.message_text
+        return res

@@ -2,6 +2,7 @@ from db.database import app_database
 from model.message import message
 from db.messages import messages_dao
 from bson import ObjectId
+from pymongo.results import InsertOneResult
 
 class message_store:
     instance = None
@@ -10,9 +11,9 @@ class message_store:
         self.dao = db.get_messages_dao()
     
     def store_message(self, msg: message):
-        result = self.dao.insert(msg)
+        result: InsertOneResult = self.dao.insert(msg)
         if result.acknowledged:
-            return {'result': 'success', 'message_id': result.insertedId}
+            return {'result': 'success', 'message_id': str(result.inserted_id)}
         return {'result': 'error', 'message': 'Error occured while sending message'}
 
     def delete_message(self, msg_id: str):
