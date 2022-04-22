@@ -27,7 +27,7 @@ class app_database:
     def get_friends_dao(self) -> friends_dao:
         return friends_dao(self.db)
 
-    def get_instance():
+    def get_instance(host = 'localhost', port = 27017, db_name = 'chat'):
         if app_database.instance == None:
-            app_database.instance = app_database()
+            app_database.instance = app_database(host, port, db_name)
         return app_database.instance
