@@ -7,9 +7,9 @@ from .friends import friends_dao
 
 class app_database:
     instance = None
-    def __init__(self, host = 'localhost', port = 27017):
+    def __init__(self, host = 'localhost', port = 27017, db_name = 'chat'):
         self.client = MongoClient(host = host, port = port)
-        self.db = self.client['chat']
+        self.db = self.client[db_name]
         
         
     def get_users_dao(self) -> users_dao:
