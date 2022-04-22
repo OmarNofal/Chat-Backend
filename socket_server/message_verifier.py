@@ -1,45 +1,51 @@
 import json
-from .socket_message import socket_message as message
 
+from .socket_message import socket_message as message
+from utils.constants import *
 
 class message_verifier:
 
 
-    valid_requests = ['send_message', 'upload_file', 'delete_message', 'messages_read']
+    valid_requests = [REQUEST_MESSAGE_SEND, REQUEST_UPLOAD_FILE, REQUEST_MESSAGE_DELETE, REQUEST_MESSAGES_READ]
 
     def __init__(self) -> None:
         pass
 
     def verify_message(msg: message):
         header = msg.header
-        content = msg.content
 
-        if not {'request', 'token'} <= header.keys():
-            return False
+        correct_header = message_verifier.verify_header(header)
         
-        request = header['request']
-
-        if not request in message_verifier.valid_requests:
+        if not correct_header:
             return False
 
-        if request == 'send_message':
+        request = header[HEADER_REQUEST]
+
+        if request == REQUEST_MESSAGE_SEND:
             return message_verifier.verify_send_message(msg)
         
-        if request == 'delete_message':
+        if request == REQUEST_MESSAGE_DELETE:
             return message_verifier.verify_delete_message(msg)
 
-        if request == 'upload_file':
+        if request == REQUEST_UPLOAD_FILE:
             return message_verifier.verify_upload_file(msg)
 
-        if request == 'messages_read':
+        if request == REQUEST_MESSAGES_READ:
             return message_verifier.verify_messages_read(msg)
+
+        return False
+
+    def verify_header(header: dict):
+        if not {HEADER_REQUEST, HEADER_TOKEN} <= header.keys():
+            return False
+        return True
 
     def verify_send_message(msg: message):
         try:
             json_string = msg.content.decode('utf-8')
             m = json.loads(json_string)
 
-            if not 'to_id' in m:
+            if not BODY_TO_ID in m:
                 return False
 
             return True
@@ -52,7 +58,7 @@ class message_verifier:
             json_string = msg.content.decode('utf-8')
             m = json.loads(json_string)
 
-            if not 'message_id' in m:
+            if not BODY_MESSAGE_ID in m:
                 return False
 
             return True
@@ -63,7 +69,7 @@ class message_verifier:
         try:
             header = msg.header
             print("checkin upload file")
-            if not {'type'} <= header.keys():
+            if not {HEADER_FILE_TYPE} <= header.keys():
                 return False
 
             return True
@@ -75,7 +81,7 @@ class message_verifier:
             json_string = msg.content.decode('utf-8')
             m = json.loads(json_string)
 
-            if not 'to_id' in m:
+            if not BODY_TO_ID in m:
                 return False
 
             return True
