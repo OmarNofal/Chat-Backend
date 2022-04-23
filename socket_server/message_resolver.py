@@ -2,14 +2,17 @@
 
 from datetime import datetime
 from socket import socket
+import json
+from socket_server.connection import connection
+
+from utils.constants import *
 from auth.authenticator import authenticator
 from files_manager.files_store import files_store
 from socket_server.socket_message import socket_message
 from socket_server.message_verifier import message_verifier
 from model.message import message as chat_message
-import json
-
 from store.message_store import message_store
+from socket_server.connection_pool import connection_pool
 
 #This class is responsible for carrying out the commands of 
 #the user TODO switch to command pattern
@@ -41,14 +44,12 @@ class message_resolver:
 
         
     def _resolve_message(self):
-        msg = self.msg
         r = self.command_type
-        c = self.content
 
-        if r == 'upload_file':
+        if r == REQUEST_UPLOAD_FILE:
             return self._upload_file()
         
-        if r == 'send_message':
+        if r == REQUEST_MESSAGE_SEND:
             return self._send_message()
 
     def _send_message(self):
@@ -56,22 +57,46 @@ class message_resolver:
         content = json.loads(msg.content.decode('utf-8'))
         chat_msg = chat_message(
             id= None,
-            from_id= authenticator.get_instance().get_user_id(msg['token']),
-            to_id=content['to_id'],
-            media_id=content['media_id'],
-            message_text=content['message_text']
+            from_id= authenticator.get_instance().get_user_id(msg[HEADER_TOKEN]),
+            to_id=content[BODY_TO_ID],
+            media_id=content[BODY_MEDIA_ID],
+            message_text=content[BODY_MESSAGE_TEXT]
         )
+        
+        # store message
+        result = message_store.get_instance().store_message(chat_msg)
+        if result['result'] == 'error':
+            return result # msg not inserted 
+
+        # TODO move message notification to appropriate class (seperation of concerns)
+        # notify the reciever of the message if they are connected
+        pool = connection_pool.get_instance()
+        user_connections = pool.get_all_connections(content[BODY_TO_ID])
+        conn: connection = user_connections[0] if user_connections != None else None
+        # user is offline
+        if conn == None:
+            return result
+        
+        msg = socket_message(
+            header = {
+                HEADER_REQUEST: REQUEST_PENDING_MESSAGES
+            }
+        )
+        conn.send_message(msg)
+        
+        return result
+
        
-        return message_store.get_instance().store_message(chat_msg)
-       
-        #TODO notify the reciever of the message if they are connected
         
     def _upload_file(self):
-        token = self.msg.header['token']
-        type = self.msg.header['type']
+        token = self.msg.header[HEADER_TOKEN]
+        type = self.msg.header[HEADER_FILE_TYPE]
         content = self.msg.content
 
         sender_id = authenticator.get_instance().get_user_id(token)
+        if not sender_id:
+            return
+
         date = datetime.today().ctime().replace(':', '-')
         return files_store.upload_file(
             sender_id,
