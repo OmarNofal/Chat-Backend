@@ -15,16 +15,24 @@ class connection:
         self.selector = selector
         self.is_closed = False
         self.user_id = None
-        self.sent_messages_ids = []
+        self.sent_messages: list[socket_message] = []
 
     def process_events(self, mask):
         if (self.is_closed):
             return
-        current_msg = self.writer.messages[0] if (len(self.writer.messages) > 0) else None
+
+        # check message we are sending
+        current_msg: socket_message = self.writer.messages[0] if (len(self.writer.messages) > 0) else None
+
+        # write queued message
         if mask & selectors.EVENT_WRITE:
             self._write_event()
+        
+        # check if current_msg was sent or not
         if not (current_msg == None or (len(self.writer.messages) > 0 and (self.writer.messages[0] == current_msg))):
             self.sent_messages_ids.append(current_msg)
+        
+        # read messages
         if mask & selectors.EVENT_READ:
             self._read_event()
 
