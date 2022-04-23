@@ -1,5 +1,6 @@
 
 
+import base64
 from datetime import datetime
 from socket import socket
 import json
@@ -51,6 +52,9 @@ class message_resolver:
         
         if r == REQUEST_MESSAGE_SEND:
             return self._send_message()
+
+        if r == REQUEST_DOWNLOAD_FILE:
+            return self._download_file()
 
     def _send_message(self):
         msg = self.msg
@@ -104,6 +108,36 @@ class message_resolver:
             content,
             type
             )
+
+
+    # TODO this is not the best way to send a file especially for big ones
+    # find a better way...
+    def _download_file(self):
+        token = self.msg.header[HEADER_TOKEN]
+        if not authenticator.get_instance().get_user_id(token):
+            return {'result': 'error', 'msg': 'invalid token'}
+        
+        content = self.msg.content.decode('utf-8')
+        j = json.loads(content)
+        media_id = j[BODY_MEDIA_ID]
+
+        f = files_store.get_file_details(media_id)
+        if not f:
+            return {'result': 'error', 'message': 'This files does not exist'}
+        
+        
+        user_id = f.file_name.split('-')[1]
+
+        path = files_store.get_file_path(user_id, f.file_name)
+        
+        f_bytes = b''
+        with open(path,'rb') as fi:
+            f_bytes = fi.read()
+        
+        result = f.as_dict()
+        result['file_bytes'] = base64.b64encode(f_bytes).decode('ascii')
+        return result
+  
 
     def _parse_message(self):
         self.command_type = self.msg['request'].lower()

@@ -33,6 +33,9 @@ class message_verifier:
         if request == REQUEST_MESSAGES_READ:
             return message_verifier.verify_messages_read(msg)
 
+        if request == REQUEST_DOWNLOAD_FILE:
+            return message_verifier.verify_download_file(msg)
+
         return False
 
     def verify_header(header: dict):
@@ -84,6 +87,18 @@ class message_verifier:
             if not BODY_TO_ID in m:
                 return False
 
+            return True
+        except Exception as e:
+            return False
+
+    def verify_download_file(msg: message):
+        try:
+            json_string = msg.content.decode('utf-8')
+            m = json.loads(json_string)
+
+            if not BODY_MEDIA_ID in m:
+                return False
+            
             return True
         except Exception as e:
             return False

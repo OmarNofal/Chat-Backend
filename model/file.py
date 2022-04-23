@@ -23,6 +23,6 @@ class file(model):
             'id': self.id,
             'file_name': self.file_name,
             'file_extension': self.file_extension,
-            'upload_date': self.upload_date
+            'upload_date': str(self.upload_date)
         }
         return res

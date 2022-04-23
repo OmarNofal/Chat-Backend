@@ -39,7 +39,6 @@ class socket_reader:
         else:
             if data:
                 self.buffer += data
-                print('here is the new data: ', data)
             else:
                 print("Peer closed connection")
                 self.is_closed = True

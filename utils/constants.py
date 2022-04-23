@@ -4,6 +4,7 @@
 HEADER_REQUEST = 'request'
 HEADER_FILE_TYPE = 'file_type'
 HEADER_TOKEN = 'token'
+HEADER_CONTENT_LENGTH = 'content-length'
 
 # Request field values
 REQUEST_MESSAGE_SEND = 'send_message'

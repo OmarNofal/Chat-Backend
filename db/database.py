@@ -1,4 +1,6 @@
 from pymongo import MongoClient
+
+from db.files import files_dao
 from .users import users_dao
 from .messages import messages_dao
 from .media import media_dao
@@ -26,6 +28,9 @@ class app_database:
     
     def get_friends_dao(self) -> friends_dao:
         return friends_dao(self.db)
+
+    def get_files_dao(self) -> files_dao:
+        return files_dao(self.db)
 
     def get_instance(host = 'localhost', port = 27017, db_name = 'chat'):
         if app_database.instance == None:

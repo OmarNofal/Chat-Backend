@@ -87,6 +87,18 @@ class TestMessageVerifier(unittest.TestCase):
         self.assertFalse(verifier.verify_message(wrong_message))
         self.assertFalse(verifier.verify_message(wrong_message2))
 
+    def test_verify_download_file(self):
+        correct_msg = socket_message(
+            header={HEADER_REQUEST: REQUEST_DOWNLOAD_FILE, HEADER_TOKEN: '123'},
+            content=json.dumps({BODY_MEDIA_ID: '0129'}).encode('utf-8')
+            )
+        wrong_message = socket_message(
+            header={HEADER_REQUEST: REQUEST_DOWNLOAD_FILE, HEADER_TOKEN: '123'},
+            content=json.dumps({}).encode('utf-8') # no media_id
+            )
+
+        self.assertTrue(verifier.verify_message(correct_msg))
+        self.assertFalse(verifier.verify_message(wrong_message))
 
 if __name__ == "__main__":
     unittest.main()
