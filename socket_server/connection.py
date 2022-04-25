@@ -30,7 +30,7 @@ class connection:
         
         # check if current_msg was sent or not
         if not (current_msg == None or (len(self.writer.messages) > 0 and (self.writer.messages[0] == current_msg))):
-            self.sent_messages_ids.append(current_msg)
+            self.sent_messages.append(current_msg)
         
         # read messages
         if mask & selectors.EVENT_READ:
@@ -49,8 +49,7 @@ class connection:
 
     def send_message(self, message: socket_message):
         self.writer.enqueue_message(message)
-
-        new_mask = selectors.EVENT_WRITE | selectors.EVENT_READ
+        new_mask = selectors.EVENT_READ | selectors.EVENT_WRITE
         self.selector.modify(self.sock, new_mask, data=self)
 
     def has_messages(self):

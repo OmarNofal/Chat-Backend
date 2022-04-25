@@ -6,7 +6,13 @@ from utils.constants import *
 class message_verifier:
 
 
-    valid_requests = [REQUEST_MESSAGE_SEND, REQUEST_UPLOAD_FILE, REQUEST_MESSAGE_DELETE, REQUEST_MESSAGES_READ]
+    valid_requests = [
+        REQUEST_MESSAGE_SEND, 
+        REQUEST_UPLOAD_FILE, 
+        REQUEST_MESSAGE_DELETE,
+        REQUEST_MESSAGES_READ,
+        REQUEST_POLL_MESSAGES
+    ]
 
     def __init__(self) -> None:
         pass
@@ -35,6 +41,9 @@ class message_verifier:
 
         if request == REQUEST_DOWNLOAD_FILE:
             return message_verifier.verify_download_file(msg)
+        
+        if request == REQUEST_POLL_MESSAGES:
+            return True # no body in this type so no need to check for it
 
         return False
 
