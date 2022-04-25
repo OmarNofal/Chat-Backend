@@ -75,6 +75,7 @@ class socket_reader:
             self.header_len = None
             self.header_read = False
             self.header = None
+            self.buffer = self.buffer[self.content_length:]
             self.content_length = None
     
 

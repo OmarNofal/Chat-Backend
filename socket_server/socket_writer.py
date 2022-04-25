@@ -23,7 +23,7 @@ class socket_writer:
     def _write_buffer(self):
         try:
             sent = self.sock.send(self.buffer)
-            self.buffer = self.buffer[:sent]
+            self.buffer = self.buffer[sent:]
         except Exception as e:
             print("Error occured while writing message " + str(e))
 
