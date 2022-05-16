@@ -1,7 +1,7 @@
 import selectors
 import socket
 
-from .socket_message import socket_message
+from .messages.socket_message import socket_message
 from .socket_reader import socket_reader
 from .socket_writer import socket_writer
 

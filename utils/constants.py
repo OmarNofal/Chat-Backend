@@ -5,6 +5,7 @@ HEADER_REQUEST = 'request'
 HEADER_FILE_TYPE = 'file_type'
 HEADER_TOKEN = 'token'
 HEADER_CONTENT_LENGTH = 'content-length'
+HEADER_FILE_EXTENSION = 'file_extension'
 
 # Request field values
 REQUEST_MESSAGE_SEND = 'send_message'               # client wants to send a message
@@ -16,6 +17,7 @@ REQUEST_DOWNLOAD_FILE = 'download_file'             # client wants to download a
 REQUEST_POLL_MESSAGES = 'poll_messages'             # client asks for messages sent to him
 REQUEST_PENDING_MESSAGES = 'pending_messages'       # server tells client that he has messages to be delieverd to him (client must ask for them using REQUEST_POLL_MESSAGES)
 REQUEST_MESSAGES_RECEIVED = 'message_received'      # client receievd messages
+REQUEST_FILE_UPLOADED = 'file_uploaded'             # server tells client that a file is uploaded
 
 # Body fields
 BODY_TO_ID = 'to_id'
