@@ -109,7 +109,7 @@ class file_upload_message(socket_message):
     This class only contains the headers and the file path
     """
     def __init__(self, header: dict = {}, file_path: str = '') -> None:
-        if REQUEST_UPLOAD_FILE not in header:
+        if header[HEADER_REQUEST] != REQUEST_UPLOAD_FILE:
             raise ValueError('Request Field must be REQUEST_UPLOAD_FILE')
         super().__init__(header)
         self.file_path = file_path
