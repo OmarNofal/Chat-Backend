@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 
 from db.files import files_dao
+from db.message_updates import messages_updates_dao
 from .users import users_dao
 from .messages import messages_dao
 from .media import media_dao
@@ -31,6 +32,9 @@ class app_database:
 
     def get_files_dao(self) -> files_dao:
         return files_dao(self.db)
+
+    def get_messages_updates_dao(self) -> messages_updates_dao:
+        return messages_updates_dao(self.db)
 
     def get_instance(host = 'localhost', port = 27017, db_name = 'chat'):
         if app_database.instance == None:

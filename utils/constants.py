@@ -18,6 +18,8 @@ REQUEST_POLL_MESSAGES = 'poll_messages'             # client asks for messages s
 REQUEST_PENDING_MESSAGES = 'pending_messages'       # server tells client that he has messages to be delieverd to him (client must ask for them using REQUEST_POLL_MESSAGES)
 REQUEST_MESSAGES_RECEIVED = 'message_received'      # client receievd messages
 REQUEST_FILE_UPLOADED = 'file_uploaded'             # server tells client that a file is uploaded
+REQUEST_ERROR = 'error'                             # any error that happens on server side
+REQUEST_MESSAGE_STORED = 'message_stored'           # server tells client that his message was stored but not yet sent
 
 # Body fields
 BODY_TO_ID = 'to_id'
@@ -25,3 +27,8 @@ BODY_MESSAGE_ID = 'message_id'
 BODY_MESSAGE_TEXT = 'message_text'
 BODY_MEDIA_ID = 'media_id'
 BODY_MESSAGES_IDS = 'messages_ids'
+BODY_ERROR_FIELD = 'error_message'
+BODY_MESSAGES = 'messages'
+BODY_USER_ID = 'user_id'
+BODY_RECEIVED_MESSAGES = 'received_messages'
+BODY_READ_MESSAGES = 'read_messages'

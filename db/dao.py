@@ -14,10 +14,7 @@ class dao:
         return self.collection.insert_one(obj)
 
     def delete(self, x: model.model):
-        obj = x.as_dict()
-        del obj['id']
-        
-        return self.collection.delete_one(obj)
+        return self.delete_id(x.id)
     
     def delete_id(self, id: str):
         object_id = ObjectId(id)
@@ -29,7 +26,7 @@ class dao:
         obj['_id'] = ObjectId(obj['id'])
         del obj['id']
 
-        return self.collection.update_one(obj)
+        return self.collection.replace_one({"_id": obj['_id']}, obj, True)
 
     def find_one(self, x: dict):
         

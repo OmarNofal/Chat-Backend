@@ -6,4 +6,4 @@ class model:
         self.id = id
 
     def as_dict(self) -> dict:
-        return {'id': id}
+        return {'id': self.id}

@@ -132,6 +132,8 @@ class socket_reader:
             self.header_read = False
             self.header = None
             self.content_length = None
+            if (self.uploaded_file != None):
+                self.uploaded_file.close()
     
 
     def pop_message(self) -> socket_message:
