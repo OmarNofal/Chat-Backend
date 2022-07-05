@@ -17,36 +17,29 @@ class files_store:
 
 
     def upload_file(user_id: str, file_name: str, 
-    file_bytes: bytes, extension: str):   
-
-        try:     
+    file_path: str, extension: str):   
         #insert to database to get id
-            dao = app_database.get_instance().get_files_dao()
-            print("Inserting model")
-            d = file_model(
-                id = None,
-                user_id= user_id,
-                file_name= file_name,
-                file_extension= extension
-            )
-            result = dao.insert(d)
+        dao = app_database.get_instance().get_files_dao()
+        print("Inserting model")
+        d = file_model(
+            id = None,
+            user_id= user_id,
+            file_name= file_name,
+            file_extension= extension
+        )
+        result = dao.insert(d)
 
-            #save file
-            user_path = _media_folder + f"{user_id}\\"
+        #save file
+        user_path = _media_folder + f"{user_id}\\"
 
-            pathlib.Path(user_path).mkdir(parents=True, exist_ok=True, mode=777)
+        pathlib.Path(user_path).mkdir(parents=True, exist_ok=True, mode=777)
 
-            file = open(user_path + f"{file_name}", 'wb')
-            file.write(file_bytes)
-            file.close()
-
-            return {'result': 'success', 'media_id': str(result.inserted_id)}
-        except Exception as e:
-            print(e)
-            return {'result': 'error', 'message': 'Failed to upload the file'}
+        os.rename(file_path, user_path + f"{file_name}")
+        return str(result.inserted_id)
 
     def get_file_details(file_id: str):
         dao = app_database.get_instance().get_files_dao()
+        
         file_obj = dao.find({'id': ObjectId(file_id)})
         if file_obj is None:
             return None
