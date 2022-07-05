@@ -26,7 +26,7 @@ class socket_message(ABC):
 
 
     def __init__(self,
-    header: dict = {},
+    header: dict,
     ) -> None:
         self.h = header
 
@@ -40,7 +40,7 @@ class socket_message(ABC):
         pass
 
     def _get_proto_and_header_bytesio(self) -> io.BytesIO:
-        header_bytes = json.dumps(self.header).encode('utf-8')
+        header_bytes = json.dumps(self.h).encode('utf-8')
         header_length = len(header_bytes)
         proto_bytes = struct.pack('>H', header_length)
         all_bytes = proto_bytes + header_bytes
@@ -55,6 +55,9 @@ class socket_message(ABC):
     def __delitem__(self, key):
         del self.h[key]
 
+    def __str__(self) -> str:
+        return json.dumps(self.h, indent=4)
+
     @property
     def header(self) -> dict:
         return self.h  
@@ -65,19 +68,28 @@ class json_message(socket_message):
     Class that represents a message where the content is of type json
     """
 
-    def __init__(self, message_type: str = "", content: dict = {}, header: dict = {}) -> None:
+    def __init__(self, message_type: str, content: dict, header: dict) -> None:
         super().__init__(header)
-        self.header[HEADER_REQUEST] = message_type
+        self.h[HEADER_REQUEST] = message_type
         if (not isinstance(content, dict)):
             raise TypeError("Content must be a dict object")
         self.content = content
         
     def get_message_stream(self) -> io.BufferedReader:
-        content_bytes = json.dumps(self.content).encode('utf-8')
-        self.header['content-length'] = len(content_bytes)
+        content_bytes = json.dumps(self.content, default=str).encode('utf-8')
+        self.h['content-length'] = len(content_bytes)
         header_bytesio = self._get_proto_and_header_bytesio()
         content_bytesio = io.BytesIO(content_bytes)
         return chain_streams([header_bytesio, content_bytesio])
+
+
+    def add_item(self, k: str, v):
+        self.content[k] = v
+
+    def __str__(self) -> str:
+        header_str = super().__str__()
+        content_str = json.dumps(self.content, indent=4)
+        return f'{header_str}\n{content_str}'
 
 
 
@@ -116,3 +128,16 @@ class file_upload_message(socket_message):
 
     def get_message_stream(self) -> io.BufferedReader:
         return super().get_message_stream()
+
+    def __str__(self) -> str:
+        header_str = super().__str__()
+        result = header_str + '\n' + "File Path: " + self.file_path
+        return result
+
+class error_message(json_message):
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(REQUEST_ERROR, {}, {})
+        print('msg = ', msg)
+        self.content[BODY_ERROR_FIELD] = msg
+    

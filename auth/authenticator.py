@@ -1,3 +1,4 @@
+from argparse import ArgumentError
 import bcrypt
 import db.database
 import pymongo
@@ -12,50 +13,45 @@ class authenticator:
  
     def register(self, u: user):
 
-        try:
-            result = self.users.find_one({'phone_number': u.phone_number})
-            if result != None:
-                return {'result': 'error', 'message': 'Phone number already registered'}
-            
-            salt = bcrypt.gensalt()
-            u.password = bcrypt.hashpw(u.password.encode(), salt).decode()
-            
-            user_dict = u.as_dict() 
-            del user_dict['id']
-            result = self.users.insert_one(user_dict)
-            if result.acknowledged:
-                token = str(uuid.uuid4())
-                session = {'user_id': str(result.inserted_id), 'token': token}
-                self.sessions.insert_one(session)
-                return {'result': 'success', 'token': token, 'user_id': str(result.inserted_id)}
-            else:
-                return {'result': 'error', 'message': 'Some error has occured'}
-        except Exception as e:
-            return {'result': 'error', 'message': 'An error occured: ' + str(e)}
+        result = self.users.find_one({'phone_number': u.phone_number})
+        if result != None:
+            raise ArgumentError(argument = None, message='Phone number already registered')
+        
+        salt = bcrypt.gensalt()
+        u.password = bcrypt.hashpw(u.password.encode(), salt).decode()
+        
+        user_dict = u.as_dict() 
+        del user_dict['id']
+        result = self.users.insert_one(user_dict)
+        if result.acknowledged:
+            token = str(uuid.uuid4())
+            session = {'user_id': str(result.inserted_id), 'token': token}
+            self.sessions.insert_one(session)
+            return {'token': token, 'user_id': str(result.inserted_id)}
+        else:
+            return None
+    
 
     def login(self, credentials: dict):
-        try:
-            phone_number = credentials['phone_number']
-            password = credentials['password']
 
-            users = self.users
-            result = users.find_one({'phone_number': phone_number})
-            if result == None:
-                return {'result': 'error', 'message': 'Phone number doesn\'t exist'}
-            print(result)
-            if not bcrypt.checkpw(password.encode(), result['password'].encode()):
-                return {'result': 'error', 'message': 'Invalid password'}
-            
-            current_session = self.sessions.find_one({'user_id': str(result['_id'])})
-            if current_session != None:
-                return {'result': 'success', 'token': current_session['token']}
+        phone_number = credentials['phone_number']
+        password = credentials['password']
 
-            token = str(uuid.uuid4())
-            self._insert_session(str(result['_id']), token)
-            return {'result': 'success', 'token': token}
-        except Exception as e:
-            
-            return {'result': 'error', 'message': 'An error occured: ' + str(e)}
+        users = self.users
+        result = users.find_one({'phone_number': phone_number})
+        if result == None:
+            raise ArgumentError(message="Incorrect Phone number")
+        print(result)
+        if not bcrypt.checkpw(password.encode(), result['password'].encode()):
+            raise ArgumentError(message="Incorrect password")
+        
+        current_session = self.sessions.find_one({'user_id': str(result['_id'])})
+        if current_session != None:
+            return current_session['token']
+
+        token = str(uuid.uuid4())
+        self._insert_session(str(result['_id']), token)
+        return token
 
     def get_user_id(self, token):
         session = self.sessions.find_one({'token': token})
