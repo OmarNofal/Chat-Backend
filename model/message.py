@@ -16,6 +16,7 @@ class message(model):
         self.from_id = from_id
         self.to_id = to_id
         self.media_id = media_id
+        self.time = time
 
     def as_dict(self) -> dict:
         res = super().as_dict()
@@ -23,4 +24,5 @@ class message(model):
         res['to_id'] = self.to_id
         res['media_id'] = self.media_id
         res['message_text'] = self.message_text
+        res['time'] = self.time
         return res

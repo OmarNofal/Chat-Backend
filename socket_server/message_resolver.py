@@ -5,13 +5,14 @@ from datetime import datetime
 from queue import Queue
 from socket import socket
 import json
+from this import s
 
 
 from socket_server.connection import connection
 from utils.constants import *
 from auth.authenticator import authenticator
 from files_manager.files_store import files_store
-from socket_server.socket_message import socket_message
+from socket_server.messages.socket_message import error_message, file_download_message, file_upload_message, json_message, socket_message
 from socket_server.message_verifier import message_verifier
 from model.message import message as chat_message
 from store.message_store import message_store
@@ -40,15 +41,12 @@ class message_resolver:
             self.is_processed = True
             return self._resolve_message()
         else:
-            return {
-                'result': 'error',
-                'message': 'incorrect message syntax'
-            }
+            return error_message('Incorrect Message Syntax')
     
 
         
     def _resolve_message(self):
-        r = self.msg[HEADER_REQUEST]
+        r = self.msg.header[HEADER_REQUEST]
 
         if r == REQUEST_UPLOAD_FILE:
             return self._upload_file()
@@ -62,59 +60,61 @@ class message_resolver:
         if r == REQUEST_POLL_MESSAGES:
             return self._poll_messages()
 
+        if r == REQUEST_MESSAGES_RECEIVED:
+            return self._messages_received()
+
     def _send_message(self):
-        msg = self.msg
-        content = json.loads(msg.content.decode('utf-8'))
+        msg: json_message = self.msg
+        content = msg.content
         chat_msg = chat_message(
             id= None,
             from_id= authenticator.get_instance().get_user_id(msg[HEADER_TOKEN]),
             to_id=content[BODY_TO_ID],
             media_id=content[BODY_MEDIA_ID],
-            message_text=content[BODY_MESSAGE_TEXT]
+            message_text=content[BODY_MESSAGE_TEXT],
+            time=datetime.now()
         )
         
         # store message
-        result = message_store.get_instance().store_message(chat_msg)
-        if result['result'] == 'error':
-            return result # msg not inserted 
+        result = None
+        try:
+            result = message_store.get_instance().store_message(chat_msg)
+        except Exception as e:
+            return error_message(str(e))
 
-        # TODO move message notification to appropriate class (seperation of concerns)
-        # notify the reciever of the message if they are connected
-        pool = connection_pool.get_instance()
-        user_connections = pool.get_all_connections(content[BODY_TO_ID])
-        conn: connection = user_connections[0] if user_connections != None else None
-        # user is offline
-        if conn == None:
-            return result
-        print(conn.user_id)
-        print(conn.is_closed)
-        msg = socket_message(
-            header = {
-                HEADER_REQUEST: REQUEST_PENDING_MESSAGES,
-                HEADER_CONTENT_LENGTH: 0
-            }
-        )
-        conn.send_message(msg)
+        assert(isinstance(result, str))
+        
 
-        return result
+        result_msg = json_message(
+                message_type = REQUEST_MESSAGE_STORED, 
+                content = {BODY_MESSAGE_ID: result},
+                header={}
+            )
+        print("resulting msg: ", result_msg)
+        
+        self._notify_user_of_new_messages(chat_msg.to_id)
+
+        return result_msg
 
     
     def _upload_file(self):
+        msg: file_upload_message = self.msg
         token = self.msg.header[HEADER_TOKEN]
-        type = self.msg.header[HEADER_FILE_TYPE]
-        content = self.msg.content
+        type = self.msg.header[HEADER_FILE_EXTENSION]
+        file_path = msg.file_path
 
         sender_id = authenticator.get_instance().get_user_id(token)
         if not sender_id:
-            return
+            print("Token invalid")
+            return error_message('Invalid token')
 
         date = datetime.today().ctime().replace(':', '-')
-        return files_store.upload_file(
-            sender_id,
-            f'CHATAPP-{sender_id}-{date}',
-            content,
-            type
-            )
+        try:
+            result = files_store.upload_file(sender_id, f'CHATAPP-{sender_id}-{date}', file_path, type)
+            return json_message(REQUEST_FILE_UPLOADED, {BODY_MEDIA_ID: result}, {})        
+        except Exception as e:
+            print("SOme exception occured ")
+            return error_message(f"There was an error while uploading the file: {str(e)}")
 
 
     # TODO this is not the best way to send a file especially for big ones
@@ -122,30 +122,21 @@ class message_resolver:
     def _download_file(self):
         token = self.msg.header[HEADER_TOKEN]
         if not authenticator.get_instance().get_user_id(token):
-            return {'result': 'error', 'msg': 'invalid token'}
+            return error_message('Invalid token')
         
-        content = self.msg.content.decode('utf-8')
-        j = json.loads(content)
-        media_id = j[BODY_MEDIA_ID]
+        content = self.msg.content
+        media_id = content[BODY_MEDIA_ID]
 
         f = files_store.get_file_details(media_id)
         if not f:
-            return {'result': 'error', 'message': 'This files does not exist'}
-        
-        
+            return error_message('This files does not exist')
+
         user_id = f.file_name.split('-')[1]
 
         path = files_store.get_file_path(user_id, f.file_name)
-        
-        f_bytes = b''
-        with open(path,'rb') as fi:
-            f_bytes = fi.read()
-        
-        result = f.as_dict()
-        result['file_bytes'] = base64.b64encode(f_bytes).decode('ascii')
-        return result
+        return file_download_message(f, path)
 
-  
+ 
     def _poll_messages(self):
         """
         Return all messages to the user and 
@@ -156,7 +147,7 @@ class message_resolver:
         token = header[HEADER_TOKEN]
         user_id = authenticator.get_instance().get_user_id(token)
         if not user_id:
-            return {'result': 'error', 'message': 'invalid token'}
+            return error_message('Invalid token')
 
         # add to the connection pool
         self.conn.user_id = user_id
@@ -171,4 +162,59 @@ class message_resolver:
             del msg['_id']
             messages[i] = msg
 
-        return messages  
+        result_message = json_message(REQUEST_MESSAGE_RECEIVE, {BODY_MESSAGES: messages}, {})
+
+        msgs_updates = message_store.get_instance().get_message_updates_to(user_id)
+        if msgs_updates != None:
+            result_message.add_item(BODY_RECEIVED_MESSAGES, msgs_updates.received_messages)
+            result_message.add_item(BODY_READ_MESSAGES, msgs_updates.read_messages)
+
+        return result_message
+
+    def _messages_received(self):
+        token = self.msg[HEADER_TOKEN]
+        user_id = authenticator.get_instance().get_user_id(token)
+        if not user_id:
+            return error_message("Invalid Token")
+
+        msg_content = json.loads(self.msg.content.decode('utf-8'))
+        msg_ids = msg_content[BODY_MESSAGES_IDS]
+        to_id = msg_content[BODY_USER_ID]
+
+        for id in msg_ids:
+            try:
+                message_store.get_instance().add_received_message(to_id, id)
+            except BaseException as e: # message is not found or something
+                print(str(e))
+
+        self._notify_user_of_new_messages(to_id)
+        
+    def _messages_read(self):
+        token = self.msg[HEADER_TOKEN]
+        user_id = authenticator.get_instance().get_user_id(token)
+        if not user_id:
+            return error_message("Invalid Token")
+
+        msg_content = json.loads(self.msg.content.decode('utf-8'))
+        msg_ids = msg_content[BODY_MESSAGES_IDS]
+        to_id = msg_content[BODY_USER_ID]
+
+        for id in msg_ids:
+            try:
+                message_store.get_instance().add_read_message(to_id, id)
+            except: # message is not found or something
+                continue
+
+        self._notify_user_of_new_messages(to_id)
+    
+
+    def _notify_user_of_new_messages(self, user_id: str):
+        pool = connection_pool.get_instance()
+        conn: connection = pool.get_connection(user_id)
+        
+        # user is offline
+        if conn == None:
+            return
+
+        notification_msg = json_message(message_type=REQUEST_PENDING_MESSAGES, content={}, header = {})
+        conn.send_message(notification_msg)

@@ -17,22 +17,30 @@ class requests_store:
         self.requests_dao: requests_dao = db.get_requests_dao()
         self.friends_dao: friends_dao = db.get_friends_dao()
     
-    def send_request(self, from_id: str, to_id: str, time = datetime.datetime.now()) -> dict:
+
+    def get_friends_of(self, user_id: str):
+        f1 = self.friends_dao.find({"u1_id": user_id})
+        f2 = self.friends_dao.find({"u2_id": user_id})
+        
+        return list(f1) + list(f2) 
+
+
+    def send_request(self, from_id: str, to_id: str, time = datetime.datetime.now()):
         req = request(sender_id= from_id, receiver_id= to_id, time= time)
 
         try:
             result = self.requests_dao.insert(req)
             if result.acknowledged:
-                return {'result': 'success', 'friend_request_id': str(result.inserted_id)}
+                return str(result.inserted_id)
             else:
-                return {'result': 'error', 'message': 'error occurred submitting friend request'}
-        except Exception as e:
-            return {'result': 'error', 'message': 'error occurred: ' + str(e)}
+                return None
+        except Exception:
+            return None
     
-    def accept_request(self, friend_request_id: str) -> dict:
+    def accept_request(self, friend_request_id: str) -> bool:
         friend_request = self.requests_dao.find_one({'_id': ObjectId(friend_request_id)})
         if not friend_request:
-            return {'result': 'error', 'message': 'this friend request does not exist'}
+            return None
         
         sender_id = friend_request['sender_id']
         receiver_id = friend_request['receiver_id']
@@ -41,9 +49,9 @@ class requests_store:
         result = self._add_friends(sender_id, receiver_id)
         if result.acknowledged:
             self.requests_dao.delete_id(friend_request_id)
-            return {'result': 'success'}
+            return True
         else:
-            return {'result': 'error', 'message': 'error occurred while accepting request #'+ friend_request_id}
+            return False
         
     def _add_friends(self, u1_id: str, u2_id: str):
         
@@ -63,15 +71,15 @@ class requests_store:
     def get_user_requests(self, user_id: str):
         return self.get_requests_from(user_id) + self.get_requests_to(user_id)
 
-    def cancel_request(self, friend_request_id: str):
+    def cancel_request(self, friend_request_id: str) -> bool:
         try:
             result: pymongo.results.DeleteResult = self.requests_dao.delete_id(friend_request_id)
             if result.deleted_count >= 1:
-                return {'result': 'success'}
+                return True
             else:
-                return {'result': 'error', 'message':'couldn\'t delete friend request'}
+                return False
         except Exception as e:
-            return {'result': 'error', 'message':'couldn\'t delete friend request'}
+            return False
     
     def get_instance():
         if requests_store.instance == None:

@@ -1,17 +1,22 @@
 import json
 
-from .socket_message import socket_message as message
+from .messages.socket_message import socket_message as message
 from utils.constants import *
 
 class message_verifier:
-
+    """
+    This class contains a static method `verify_message` whose function is to 
+    check that the syntax of the message is correct
+    """
 
     valid_requests = [
         REQUEST_MESSAGE_SEND, 
         REQUEST_UPLOAD_FILE, 
         REQUEST_MESSAGE_DELETE,
         REQUEST_MESSAGES_READ,
-        REQUEST_POLL_MESSAGES
+        REQUEST_POLL_MESSAGES,
+        REQUEST_MESSAGES_RECEIVED,
+        REQUEST_MESSAGES_READ
     ]
 
     def __init__(self) -> None:
@@ -45,6 +50,12 @@ class message_verifier:
         if request == REQUEST_POLL_MESSAGES:
             return True # no body in this type so no need to check for it
 
+        if request == REQUEST_MESSAGES_RECEIVED:
+            return message_verifier.verify_messages_received(msg)
+
+        if request == REQUEST_MESSAGES_READ:
+            return message_verifier.verify_messages_read(msg)
+
         return False
 
     def verify_header(header: dict):
@@ -54,60 +65,78 @@ class message_verifier:
 
     def verify_send_message(msg: message):
         try:
-            json_string = msg.content.decode('utf-8')
-            m = json.loads(json_string)
+            m = msg.content
 
             if not BODY_TO_ID in m:
                 return False
 
             return True
-        except Exception as e:
+        except:
             return False
 
     
     def verify_delete_message(msg: message):
         try:
-            json_string = msg.content.decode('utf-8')
-            m = json.loads(json_string)
+            m = msg.content
 
             if not BODY_MESSAGE_ID in m:
                 return False
 
             return True
-        except Exception as e:
+        except:
             return False
 
     def verify_upload_file(msg: message):
         try:
             header = msg.header
-            print("checkin upload file")
-            if not {HEADER_FILE_TYPE} <= header.keys():
+            if not {HEADER_FILE_EXTENSION} <= header.keys():
                 return False
 
             return True
-        except Exception as e:
+        except:
             return False
 
     def verify_messages_read(msg: message):
         try:
-            json_string = msg.content.decode('utf-8')
-            m = json.loads(json_string)
+            
+            m = msg.content
 
             if not BODY_TO_ID in m:
                 return False
 
             return True
-        except Exception as e:
+        except:
             return False
 
     def verify_download_file(msg: message):
         try:
-            json_string = msg.content.decode('utf-8')
-            m = json.loads(json_string)
+            m = msg.content
 
             if not BODY_MEDIA_ID in m:
                 return False
             
             return True
-        except Exception as e:
+        except:
+            return False
+
+    def verify_messages_received(msg: message):
+        try:
+            content = msg.content
+            if not BODY_MESSAGES_IDS in content or not isinstance(content[BODY_MESSAGES_IDS], list):
+                return False
+            if not BODY_USER_ID in content:
+                return False
+            return True
+        except:
+            return False
+
+    def verify_messages_read(msg: message):
+        try:
+            content = msg.content
+            if not BODY_MESSAGES_IDS in content or not isinstance(content[BODY_MESSAGES_IDS], list):
+                return False
+            if not BODY_USER_ID in content:
+                return False
+            return True
+        except:
             return False
