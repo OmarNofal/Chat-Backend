@@ -14,31 +14,23 @@ class connection_pool:
         self.pool = dict()
 
     def add_connection(self, conn, user_id):
-        if not user_id in self.pool:
-            self.pool[user_id] = [conn]
-        else:
-            self.pool[user_id] += [conn]
+        self.pool[user_id] = conn
+        
 
     def get_connection(self, user_id):
         if not user_id in self.pool:
             return None
-        return self.pool[user_id][0]
+        return self.pool[user_id]
 
     def get_all_connections(self, user_id):
         if not user_id in self.pool:
             return None
         return self.pool[user_id]
 
-    def remove_connection(self, conn, user_id):
+    def remove_connection(self, user_id):
         if user_id not in self.pool:
             return
-        connections: list[connection] = self.pool[user_id]
-
-        for i in range(0, len(connections)):
-            if connections[i] == conn:
-                connections.pop(i)
-            if len(connections) == 0:
-                del self.pool[user_id]
+        del self.pool[user_id]
 
     def remove_all_connections(self, user_id):
         del self.pool[user_id]
