@@ -57,6 +57,10 @@ class authenticator:
         session = self.sessions.find_one({'token': token})
         return session['user_id'] if session != None else None
 
+    def get_token(self, userId):
+        session = self.sessions.find_one({'user_id': userId})
+        return session['token'] if session != None else None
+
     def get_instance():
         if authenticator.instance == None:
             database = db.database.app_database.get_instance()

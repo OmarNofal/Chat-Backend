@@ -32,3 +32,12 @@ BODY_MESSAGES = 'messages'
 BODY_USER_ID = 'user_id'
 BODY_RECEIVED_MESSAGES = 'received_messages'
 BODY_READ_MESSAGES = 'read_messages'
+
+
+
+# Firebase fields
+FB_MESSAGE_TYPE = 'type'
+FB_TYPE_NEW_FRIEND_REQUEST = 'new_request'
+FB_TYPE_ACCEPTED_FRIEND_REQUEST = 'request_accepted'
+FB_TYPE_NEW_MESSAGES = 'new_messages'
+FB_USER_NAME = 'user_name'

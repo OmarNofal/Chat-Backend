@@ -1,11 +1,13 @@
 
 
+import asyncio
 import base64
 from datetime import datetime
 from queue import Queue
 from socket import socket
 import json
 from this import s
+from notifications.notifier import Notifier
 
 
 from socket_server.connection import connection
@@ -63,6 +65,9 @@ class message_resolver:
         if r == REQUEST_MESSAGES_RECEIVED:
             return self._messages_received()
 
+        if r == REQUEST_MESSAGES_READ:
+            return self._messages_read()
+
     def _send_message(self):
         msg: json_message = self.msg
         content = msg.content
@@ -90,9 +95,8 @@ class message_resolver:
                 content = {BODY_MESSAGE_ID: result},
                 header={}
             )
-        print("resulting msg: ", result_msg)
         
-        self._notify_user_of_new_messages(chat_msg.to_id)
+        Notifier().notify_new_messages(chat_msg.to_id) 
 
         return result_msg
 
@@ -117,8 +121,6 @@ class message_resolver:
             return error_message(f"There was an error while uploading the file: {str(e)}")
 
 
-    # TODO this is not the best way to send a file especially for big ones
-    # find a better way...
     def _download_file(self):
         token = self.msg.header[HEADER_TOKEN]
         if not authenticator.get_instance().get_user_id(token):
@@ -168,6 +170,13 @@ class message_resolver:
         if msgs_updates != None:
             result_message.add_item(BODY_RECEIVED_MESSAGES, msgs_updates.received_messages)
             result_message.add_item(BODY_READ_MESSAGES, msgs_updates.read_messages)
+        else:
+            result_message.add_item(BODY_RECEIVED_MESSAGES, [])
+            result_message.add_item(BODY_READ_MESSAGES, [])
+        
+        message_store.get_instance().delete_messages_updates_for(user_id)
+
+        print (result_message.content, end= "\n\n\n")
 
         return result_message
 
@@ -177,13 +186,16 @@ class message_resolver:
         if not user_id:
             return error_message("Invalid Token")
 
-        msg_content = json.loads(self.msg.content.decode('utf-8'))
+        msg_content = self.msg.content
         msg_ids = msg_content[BODY_MESSAGES_IDS]
         to_id = msg_content[BODY_USER_ID]
+
+        print("A user has received messages", msg_ids)
 
         for id in msg_ids:
             try:
                 message_store.get_instance().add_received_message(to_id, id)
+                message_store.get_instance().delete_message(id)
             except BaseException as e: # message is not found or something
                 print(str(e))
 
@@ -195,9 +207,11 @@ class message_resolver:
         if not user_id:
             return error_message("Invalid Token")
 
-        msg_content = json.loads(self.msg.content.decode('utf-8'))
+        msg_content = self.msg.content
         msg_ids = msg_content[BODY_MESSAGES_IDS]
         to_id = msg_content[BODY_USER_ID]
+
+        print("A user has read messages", msg_ids)
 
         for id in msg_ids:
             try:

@@ -28,10 +28,7 @@ class connection:
         if mask & selectors.EVENT_WRITE:
             self._write_event()
         
-        # check if current_msg was sent or not
-        if not (current_msg == None or (len(self.writer.messages) > 0 and (self.writer.messages[0] == current_msg))):
-            self.sent_messages.append(current_msg)
-        
+        #TODO we removed a line here 
         # read messages
         if mask & selectors.EVENT_READ:
             self._read_event()

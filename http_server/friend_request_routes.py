@@ -5,6 +5,7 @@ from datetime import datetime
 from auth.authenticator import authenticator
 from http_server.api_response import error_reponse, success_response
 from model.user import user
+from notifications.notifier import Notifier
 from store.profile_store import profile_store
 from store.requests_store import requests_store
 
@@ -38,6 +39,12 @@ def send_friend_request():
     if not id:
         return error_reponse("Could not send the friend request").content
 
+
+    #send notification to the user
+    sender_profile = profile_store.get_instance().get_user_profile(sender_id)
+    sender_name = sender_profile.first_name + " " + sender_profile.last_name
+    Notifier().notify_new_friend_request(receiver_id, sender_name)
+
     res = success_response()
     res['friend_request_id'] = id
     return res.content
@@ -68,7 +75,7 @@ def accept_request():
         return error_reponse("Invalid Token").content
 
     req_dao = app_database.get_instance().get_requests_dao()
-    req = req_dao.find_one({'_id': ObjectId(friend_request_id), 'receiver_id': user_id})
+    req  = req_dao.find_one({'_id': ObjectId(friend_request_id), 'receiver_id': user_id})
 
     if not req:
         return error_reponse("Invalid Friend Request Id").content
@@ -77,6 +84,11 @@ def accept_request():
 
     if not res:
         return error_reponse("Error occured while accepting friend request").content
+
+    #send notification to the user
+    sender_profile = profile_store.get_instance().get_user_profile(user_id)
+    sender_name = sender_profile.first_name + " " + sender_profile.last_name
+    Notifier().notify_accepted_friend_request(req['sender_id'], sender_name)
 
     return success_response().content
 

@@ -12,8 +12,8 @@ class messages_updates(model):
         self, 
         id: str,
         user_id: str,
-        received_messages = [],
-        read_messages = []
+        received_messages,
+        read_messages
         ):
         super().__init__(id)
         self.user_id = user_id

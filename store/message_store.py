@@ -21,7 +21,7 @@ class message_store:
             raise Exception()
 
     def delete_message(self, msg_id: str):
-        return self.messages_dao.delete_one({'_id': ObjectId(msg_id)})
+        return self.messages_dao.delete_id(msg_id)
 
     def get_messages_to(self, user_id: str):
         """
@@ -36,9 +36,11 @@ class message_store:
         if (not u_message_status):
             u_message_status = messages_updates(
                 id = str(ObjectId()),
-                user_id = user_id
+                user_id = user_id,
+                read_messages= [],
+                received_messages= []
             )
-
+        
         u_message_status.add_received_message(message_id)
         self.updates_dao.update(u_message_status)
 
@@ -47,7 +49,9 @@ class message_store:
         if (not u_message_status):
             u_message_status = messages_updates(
                 id = str(ObjectId()),
-                user_id = user_id
+                user_id = user_id,
+                read_messages= [],
+                received_messages= []
             )
         
         u_message_status.add_read_message(message_id)
@@ -77,6 +81,9 @@ class message_store:
     def get_message_updates_to(self, user_id: str) -> messages_updates:
         u_message_updates = self._get_message_updates(user_id)
         return u_message_updates
+
+    def delete_messages_updates_for(self, user_id: str):
+        self.updates_dao.delete_with_filter({'user_id': user_id})
 
     def _get_message_updates(self, user_id: str) -> messages_updates:
         u_message_status = self.updates_dao.find_one({'user_id': user_id})

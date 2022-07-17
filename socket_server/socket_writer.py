@@ -1,5 +1,7 @@
 import socket
 import io
+
+from zmq import Socket
 from socket_server.messages.socket_message import *
 
 class socket_writer:
@@ -9,6 +11,7 @@ class socket_writer:
         self.sock = sock
         self.stream: io.BufferedReader = None
         self.buffer = b''
+        self.is_closed = False
 
 
     # TODO 
@@ -39,7 +42,8 @@ class socket_writer:
         try:
             sent = self.sock.send(self.buffer)
             self.buffer = self.buffer[sent:]
-        except Exception as e:
+        except socket.error as e:
+            self.is_closed = True
             print("Error occured while writing message " + str(e))
 
     def enqueue_message(self, msg: socket_message):

@@ -6,13 +6,13 @@ app = Flask(__name__)
 import http_server.authentication_routes
 import http_server.profile_routes
 import http_server.friend_request_routes
+import http_server.friend_routes
 
 @app.route('/')
 def index():
-
-    sleep(4)
-
     return 'hello'
 
 
-app.run(debug=True)
+if __name__ == '__main__':
+   app.run(host='0.0.0.0')
+   app.run(debug=True)

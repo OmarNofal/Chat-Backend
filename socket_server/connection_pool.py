@@ -22,6 +22,9 @@ class connection_pool:
             return None
         return self.pool[user_id]
 
+    def is_connected(self, user_id):
+        return self.get_connection(user_id) is not None
+
     def get_all_connections(self, user_id):
         if not user_id in self.pool:
             return None

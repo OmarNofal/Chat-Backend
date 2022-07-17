@@ -3,34 +3,35 @@ import unittest
 import json
 
 from socket_server.message_verifier import message_verifier as verifier
-from socket_server.socket_message import socket_message
+from socket_server.messages.socket_message import file_upload_message, socket_message, json_message
 from utils.constants import *
+
+
 
 class TestMessageVerifier(unittest.TestCase):
    
 
     def test_verify_headers_correct(self):
-        correct_msg = socket_message({HEADER_REQUEST: REQUEST_DOWNLOAD_FILE, HEADER_TOKEN: '123'})
-        wrong_msg = socket_message({HEADER_TOKEN: '123'}) # no request
-        wrong_msg2 = socket_message({HEADER_REQUEST: REQUEST_MESSAGE_SEND, HEADER_FILE_TYPE: 'mp4'}) # no token
+        correct_msg = json_message(header = {HEADER_REQUEST: REQUEST_DOWNLOAD_FILE, HEADER_TOKEN: '123'})
+        wrong_msg2 = json_message(header = {HEADER_REQUEST: REQUEST_MESSAGE_SEND, HEADER_FILE_TYPE: 'mp4'}) # no token
 
         self.assertTrue(verifier.verify_header(correct_msg.header))
-        self.assertFalse(verifier.verify_header(wrong_msg.header))
         self.assertFalse(verifier.verify_header(wrong_msg2.header))
 
 
     def test_verify_send_message(self):
-        correct_msg = socket_message(
-            header={HEADER_REQUEST: REQUEST_MESSAGE_SEND, HEADER_TOKEN: '123'},
-            content=json.dumps({BODY_TO_ID: '0129'}).encode('utf-8')
+        correct_msg = json_message(
+            message_type=REQUEST_MESSAGE_SEND,
+            header={HEADER_TOKEN: '123'},
+            content={BODY_TO_ID: '0129', BODY_MEDIA_ID: '123'}
             )
-        wrong_message = socket_message(
+        wrong_message = json_message(
             header={HEADER_REQUEST: REQUEST_MESSAGE_SEND, HEADER_TOKEN: '123'},
-            content=json.dumps({BODY_MEDIA_ID: '0129'}).encode('utf-8') # no media id 
+            content={BODY_MEDIA_ID: '0129'} # no media id 
             )
-        wrong_message2 = socket_message(
+        wrong_message2 = json_message(
             header={HEADER_REQUEST: REQUEST_MESSAGE_SEND}, # no token
-            content=json.dumps({BODY_TO_ID: '0129'}).encode('utf-8')
+            content={BODY_TO_ID: '0129'}
             )
 
         self.assertTrue(verifier.verify_message(correct_msg))
@@ -39,10 +40,10 @@ class TestMessageVerifier(unittest.TestCase):
 
 
     def test_verify_upload_file(self):
-        correct_msg = socket_message(
+        correct_msg = file_upload_message(
             header={HEADER_REQUEST: REQUEST_UPLOAD_FILE, HEADER_TOKEN: '123', HEADER_FILE_TYPE: 'mp4'}
             )
-        wrong_message = socket_message(
+        wrong_message = file_upload_message(
             header={HEADER_REQUEST: REQUEST_UPLOAD_FILE, HEADER_TOKEN: '123'} # no FILE_TYPE in the header
             )
 
@@ -99,6 +100,20 @@ class TestMessageVerifier(unittest.TestCase):
 
         self.assertTrue(verifier.verify_message(correct_msg))
         self.assertFalse(verifier.verify_message(wrong_message))
+
+    # def test_verify_messages_receieved(self):
+    #     correct_msg = socket_message(
+    #         header={HEADER_REQUEST: REQUEST_MESSAGES_RECEIVED, HEADER_TOKEN: '123'},
+    #         content=json.dumps({BODY_MESSAGES_IDS: ['123', '123', '123']}).encode('utf-8')
+    #         )
+    #     wrong_message = socket_message(
+    #         header={HEADER_REQUEST: REQUEST_MESSAGES_READ, HEADER_TOKEN: '123'},
+    #         content=json.dumps({BODY_MESSAGES_IDS: {}}).encode('utf-8')
+    #         )
+        
+    #     self.assertTrue(verifier.verify_message(correct_msg))
+    #     self.assertFalse(verifier.verify_message(wrong_message))
+
 
 if __name__ == "__main__":
     unittest.main()

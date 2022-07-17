@@ -16,6 +16,9 @@ class dao:
     def delete(self, x: model.model):
         return self.delete_id(x.id)
     
+    def delete_with_filter(self, filter: dict):
+        return self.collection.delete_one(filter)
+
     def delete_id(self, id: str):
         object_id = ObjectId(id)
 

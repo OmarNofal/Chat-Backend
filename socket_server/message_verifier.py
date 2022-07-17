@@ -96,17 +96,17 @@ class message_verifier:
         except:
             return False
 
-    def verify_messages_read(msg: message):
-        try:
+    # def verify_messages_read(msg: message):
+    #     try:
             
-            m = msg.content
+    #         m = msg.content
 
-            if not BODY_TO_ID in m:
-                return False
+    #         if not BODY_TO_ID in m:
+    #             return False
 
-            return True
-        except:
-            return False
+    #         return True
+    #     except:
+    #         return False
 
     def verify_download_file(msg: message):
         try:
@@ -132,7 +132,9 @@ class message_verifier:
 
     def verify_messages_read(msg: message):
         try:
+            print('verifiying messages read')
             content = msg.content
+            print(content, end='\n\n')
             if not BODY_MESSAGES_IDS in content or not isinstance(content[BODY_MESSAGES_IDS], list):
                 return False
             if not BODY_USER_ID in content:
